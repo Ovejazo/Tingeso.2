@@ -27,8 +27,8 @@ pipeline {
                 dir("payroll-backend"){
                     script{
                         withDockerRegistry(credentialsId: 'docker-credentials'){
-                            bat "docker build -t polloh/payroll-backend:latest ."
-                            bat "docker push polloh/payroll-backend:latest"
+                            bat "docker build -t ovejazo/payroll-backend:latest ."
+                            bat "docker push ovejazo/payroll-backend:latest"
                         }
                     }
                 }
