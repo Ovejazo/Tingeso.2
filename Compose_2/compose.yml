@@ -1,0 +1,137 @@
+#version: "3.8"
+
+services:
+
+  nginx-backend:
+    image: nginx
+    container_name: payroll-backend-nginx-container
+    #restart: always
+    ports:
+      - "8090:8090"
+    networks:
+      - payroll-backend-network
+    volumes:
+      - ./nginx-backend.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - spring1
+      - spring2
+      - spring3
+  
+  nginx-frontend:
+    image: nginx
+    container_name: payroll-frontend-nginx-container
+    #restart: always
+    ports:
+      - "8070:8070"
+    volumes:
+      - ./nginx-frontend.conf:/etc/nginx/nginx.conf
+    networks:
+      - payroll-frontend-network
+    depends_on:
+      - payroll-frontend-nginx-container-1
+      - payroll-frontend-nginx-container-2
+      - payroll-frontend-nginx-container-3
+      
+  postgres:
+    container_name: payroll-postgres-container
+    image: postgres
+    deploy:
+      #restart_policy:
+        #condition: on-failure
+    volumes: 
+      - payroll-postgres-volume:/var/lib/postgresql/data
+    networks:
+      - payroll-backend-network
+    environment:
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - 5435:5432
+  spring1:
+    container_name: payroll-backend-nginx-container-1
+    image: ovejazo/payroll-backend
+    ports:
+      - "8091:8090"
+    environment:
+      - DB_HOST=payroll-postgres-container
+      - DB_PORT=5432
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=postgres
+    networks:
+      - payroll-backend-network
+    deploy:
+      #restart_policy:
+        #condition: on-failure
+    depends_on:
+      - postgres
+  spring2:
+    container_name: payroll-backend-nginx-container-2
+    image: ovejazo/payroll-backend
+    ports:
+      - "8092:8090"
+    environment:
+      - DB_HOST=payroll-postgres-container
+      - DB_PORT=5432
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=postgres
+    networks:
+      - payroll-backend-network
+    deploy:
+      #restart_policy:
+        #condition: on-failure
+    depends_on:
+      - postgres
+  spring3:
+    container_name: payroll-backend-nginx-container-3
+    image: ovejazo/payroll-backend
+    ports:
+      - "8093:8090"
+    environment:
+      - DB_HOST=payroll-postgres-container
+      - DB_PORT=5432
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=postgres
+    networks:
+      - payroll-backend-network
+    deploy:
+      #restart_policy:
+        #condition: on-failure
+    depends_on:
+      - postgres
+  payroll-frontend-nginx-container-1:
+    container_name: payroll-frontend-nginx-container-1
+    image: ovejazo/payroll-frontend
+    ports:
+      - "8071:80"
+    networks:
+      - payroll-frontend-network
+    deploy:
+      #restart_policy:
+        #condition: on-failure
+
+  payroll-frontend-nginx-container-2:
+    container_name: payroll-frontend-nginx-container-2
+    image: ovejazo/payroll-frontend
+    ports:
+      - "8072:80"
+    networks:
+      - payroll-frontend-network
+    deploy:
+      #restart_policy:
+        #condition: on-failure
+
+  payroll-frontend-nginx-container-3:
+    container_name: payroll-frontend-nginx-container-3
+    image: ovejazo/payroll-frontend
+    ports:
+      - "8073:80"
+    networks:
+      - payroll-frontend-network
+    deploy:
+      #restart_policy:
+        #condition: on-failure
+
+volumes: 
+  payroll-postgres-volume:
+networks:
+  payroll-backend-network:
+  payroll-frontend-network:
