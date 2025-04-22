@@ -8,12 +8,22 @@ import IconButton from "@mui/material/IconButton";
 import MenuIcon from "@mui/icons-material/Menu";
 import Sidemenu from "./Sidemenu";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
 
   const toggleDrawer = (open) => (event) => {
     setOpen(open);
+  };
+
+  const handleLogin = () => {
+    navigate("/login");
+  };
+
+  const handleCreateUser = () => {
+    navigate("/register");
   };
 
   return (
@@ -34,7 +44,12 @@ export default function Navbar() {
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
             Gestión de Karts
           </Typography>
-          <Button color="inherit">Login</Button>
+          <Button color="inherit" onClick={handleLogin}>
+            Login
+          </Button>
+          <Button color="inherit" onClick={handleCreateUser}>
+            Crear Usuario
+          </Button>
         </Toolbar>
       </AppBar>
 
