@@ -14,6 +14,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.integration.IntegrationProperties;
 import org.springframework.stereotype.Service;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -44,66 +46,18 @@ public class BookingService {
         return clientRepository.save(client);
     }
 
-    public BookingEntity saveBooking(BookingEntity booking){
+    public BookingEntity saveBooking(BookingEntity booking) {
         /*
-        * Aquí la reserva se hara dependiendo de la tarifa que escoja el cliente
-        */
+         * Aquí la reserva se hará dependiendo de la tarifa que escoja el cliente
+         */
 
-        /*
-        La opción 1 de tarifa tiene:
-        * Un valor de 15.000.
-        * Una duración de 10 minutos máximos.
-        * Una reserva de 30 minutos máximos.
-        */
-        //Conseguimos al cliente que va a pagar.
+        // Conseguimos al cliente que va a pagar.
         ClientEntity client = clientRepository.findByRut(booking.getPersonRUT());
         if (client == null) {
             throw new RuntimeException("Cliente no encontrado");
         }
 
-        //Esto es solo una idea de lo que podríamos hacer adicionalmente
-        /*
-
-        //Conseguimos los autos que se van a usar
-        List<KartEntity> karts =  kartService.getKart();
-
-        // Obtenemos la lista de autos disponibles usando Streams
-        List<KartEntity> ableKarts = karts.stream()
-                .filter(kart -> kart.getState() != null && kart.getState())
-                .collect(Collectors.toList());
-
-        //Imprimimos los autos habilitados
-        System.out.println("Auto habilitados: " + ableKarts.size());
-
-        // Iteramos sobre la lista de autos habilitados y los imprimimos
-        for (KartEntity kart : ableKarts) {
-            System.out.println("Auto: " + kart.getName() + ", Estado: " + kart.getState());
-        }
-
-
-        // Verificamos si hay suficientes autos disponibles
-        if (ableKarts.size() >= autosNecesarios) {
-            // Tomamos los autos necesarios
-            List<KartEntity> autosReservados = ableKarts.stream()
-                    .limit(autosNecesarios) // Tomamos solo la cantidad necesaria
-                    .collect(Collectors.toList());
-
-            // Actualizamos el estado de los autos reservados a "no disponibles"
-            autosReservados.forEach(kart -> {
-                kart.setState(false); // Actualizamos el estado del auto
-                System.out.println("Reservando auto: " + kart.getName());
-                // Guardamos los cambios en la base de datos (simulado aquí)
-                kartService.saveKart(kart); // Asegúrate de que `saveKart` esté implementado en el servicio
-            });
-
-            System.out.println("Reserva completada. Autos reservados: " + autosReservados.size());
-        } else {
-            // Si no hay suficientes autos disponibles
-            System.out.println("No hay suficientes autos disponibles para realizar la reserva.");
-        }
-        */
-
-        //Vamos a conseguir los valores de cada opción de tarifa, la duración y las vueltas posibles
+        // Vamos a conseguir los valores de cada opción de tarifa, la duración y las vueltas posibles
         int tarifaBase = 0;
         int duracionReservaMin = 0;
         int vueltas = 0;
@@ -116,22 +70,22 @@ public class BookingService {
                 break;
             case 2:
                 tarifaBase = 20000;
-                duracionReservaMin = 30;
+                duracionReservaMin = 35;
                 vueltas = 15;
                 break;
             case 3:
                 tarifaBase = 25000;
-                duracionReservaMin = 35;
+                duracionReservaMin = 40;
                 vueltas = 20;
                 break;
             default:
                 throw new RuntimeException("Opción de tarifa inválida.");
         }
 
-        //Colocamos el tiempo maximo de la reserva
+        // Colocamos el tiempo máximo de la reserva
         booking.setLimitTime(duracionReservaMin);
 
-        //vamos a pensar en los descuentos por grupo
+        // Vamos a pensar en los descuentos por grupo
         int nPersonas = booking.getNumberOfPerson();
         double descuentoGrupo = 0;
 
@@ -139,7 +93,7 @@ public class BookingService {
         else if (nPersonas >= 6 && nPersonas <= 10) descuentoGrupo = 0.20;
         else if (nPersonas >= 11 && nPersonas <= 15) descuentoGrupo = 0.30;
 
-        // 3. Descuento por frecuencia
+        // Descuento por frecuencia
         int visitasCliente = client.getFrecuency();
         double descuentoFrecuencia = 0;
 
@@ -147,34 +101,47 @@ public class BookingService {
         else if (visitasCliente >= 5) descuentoFrecuencia = 0.20;
         else if (visitasCliente >= 2) descuentoFrecuencia = 0.10;
 
-        //Vamos a conseguir el cumpleaños del cliente
+        // Vamos a conseguir el cumpleaños del cliente
         double descuentoCumpleaños = 0;
         boolean esCumpleaños = client.getDateOfBirth() == booking.getDateBooking();
-        if((esCumpleaños) && (nPersonas >= 3)){
+        if ((esCumpleaños) && (nPersonas >= 3)) {
             if (nPersonas <= 5) descuentoCumpleaños = 0.5;
         }
 
-        //Aplicamos los descuentos
+        // Aplicamos los descuentos
         double descuentoTotal = descuentoGrupo + descuentoFrecuencia + descuentoCumpleaños;
         System.out.println("\nDescuento grupo: " + descuentoGrupo);
         System.out.println("\nDescuento Frecuencia: " + descuentoFrecuencia);
         System.out.println("\nDescuento Cumpleaños: " + descuentoCumpleaños);
-        double totalSinIVA = tarifaBase - (1 * descuentoTotal);
+        double totalSinIVA = tarifaBase - (tarifaBase * descuentoTotal);
 
         /*
-        * Calculamos el iva
-        * Conseguimos el valor del IVA obteniendo el total multiplicado por 0.19
-        * Luego le sumamos ese valor al total sin iva obteniendo el total con el iva incluido
-        * */
+         * Calculamos el IVA
+         * Conseguimos el valor del IVA obteniendo el total multiplicado por 0.19
+         * Luego le sumamos ese valor al total sin IVA obteniendo el total con el IVA incluido
+         */
         double IVA = totalSinIVA * 0.19;
         double totalConIVA = totalSinIVA + IVA;
-
 
         client.setCash((int) (client.getCash() - totalConIVA));
         client.setFrecuency(client.getFrecuency() + 1); // o según políticas del negocio
         clientService.updateClient(client);
 
+        // Validar que el tiempo inicial esté configurado
+        if (booking.getInitialTime() == null) {
+            throw new RuntimeException("El tiempo inicial de la reserva no está definido.");
+        }
 
+        // Cálculo del tiempo final de la reserva
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(booking.getInitialTime());
+        calendar.add(Calendar.MINUTE, booking.getLimitTime()); // Sumar los minutos de duración
+        Date finalTime = calendar.getTime();
+
+        // Establecer el tiempo final en la entidad de reserva
+        booking.setFinalTime(finalTime);
+
+        // Persistir la reserva
         return bookingRepository.save(booking);
 
         /*
