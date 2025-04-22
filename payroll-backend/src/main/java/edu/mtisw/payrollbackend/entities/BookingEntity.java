@@ -49,7 +49,4 @@ public class BookingEntity {
 
     //La opción de tarifa
     private Integer optionFee;
-
-    //Opción de día especial
-    private boolean especialDay;
 }
