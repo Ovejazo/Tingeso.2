@@ -47,6 +47,6 @@ public class BookingEntity {
     //Rut de la persona que hizo la reserva (debe existir)
     private String personRUT;
 
-    //La opción de tarifa
+    //La opción de tarifa.
     private Integer optionFee;
 }
