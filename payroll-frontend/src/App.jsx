@@ -10,6 +10,7 @@ import NotFound from './components/NotFound';
 import PaycheckList from './components/PaycheckList';
 import PaycheckCalculate from './components/PaycheckCalculate';
 import AnualReport from './components/AnualReport';
+import Login from './components/Login';
 
 function App() {
   return (
@@ -18,6 +19,8 @@ function App() {
           <Navbar></Navbar>
             <Routes>
               <Route path="/home" element={<Home/>} />
+              <Route path="/login" element={<Login/>} />
+              <Route path="/register" element={<Home/>} />
               <Route path="/employee/list" element={<EmployeeList/>} />
               <Route path="/employee/add" element={<AddEditEmployee/>} />
               <Route path="/client/list" element={<EmployeeList/>} />
