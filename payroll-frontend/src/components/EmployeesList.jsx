@@ -75,7 +75,7 @@ const EmployeeList = () => {
           color="primary"
           startIcon={<PersonAddIcon />}
         >
-          Añadir Empleado
+          Añadir Cliente
         </Button>
       </Link>
       <br /> <br />
