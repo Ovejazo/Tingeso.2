@@ -22,7 +22,7 @@ services:
     container_name: payroll-frontend-nginx-container
     #restart: always
     ports:
-      - "8070:8070"
+      - "8070:80"
     volumes:
       - ./nginx-frontend.conf:/etc/nginx/nginx.conf
     networks:
@@ -49,8 +49,6 @@ services:
   spring1:
     container_name: payroll-backend-nginx-container-1
     image: ovejazo/payroll-backend
-    ports:
-      - "8091:8090"
     environment:
       - DB_HOST=payroll-postgres-container
       - DB_PORT=5432
@@ -66,8 +64,6 @@ services:
   spring2:
     container_name: payroll-backend-nginx-container-2
     image: ovejazo/payroll-backend
-    ports:
-      - "8092:8090"
     environment:
       - DB_HOST=payroll-postgres-container
       - DB_PORT=5432
@@ -83,8 +79,6 @@ services:
   spring3:
     container_name: payroll-backend-nginx-container-3
     image: ovejazo/payroll-backend
-    ports:
-      - "8093:8090"
     environment:
       - DB_HOST=payroll-postgres-container
       - DB_PORT=5432
@@ -100,8 +94,6 @@ services:
   payroll-frontend-nginx-container-1:
     container_name: payroll-frontend-nginx-container-1
     image: ovejazo/payroll-frontend
-    ports:
-      - "8071:80"
     networks:
       - payroll-frontend-network
     deploy:
@@ -111,8 +103,6 @@ services:
   payroll-frontend-nginx-container-2:
     container_name: payroll-frontend-nginx-container-2
     image: ovejazo/payroll-frontend
-    ports:
-      - "8072:80"
     networks:
       - payroll-frontend-network
     deploy:
@@ -122,8 +112,6 @@ services:
   payroll-frontend-nginx-container-3:
     container_name: payroll-frontend-nginx-container-3
     image: ovejazo/payroll-frontend
-    ports:
-      - "8073:80"
     networks:
       - payroll-frontend-network
     deploy:
