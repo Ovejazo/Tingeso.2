@@ -20,6 +20,8 @@ function App() {
               <Route path="/home" element={<Home/>} />
               <Route path="/employee/list" element={<EmployeeList/>} />
               <Route path="/employee/add" element={<AddEditEmployee/>} />
+              <Route path="/client/list" element={<EmployeeList/>} />
+              <Route path="/client/add" element={<AddEditEmployee/>} />
               <Route path="/employee/edit/:id" element={<AddEditEmployee/>} />
               <Route path="/paycheck/list" element={<PaycheckList/>} />
               <Route path="/paycheck/calculate" element={<PaycheckCalculate/>} />

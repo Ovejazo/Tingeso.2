@@ -2,9 +2,11 @@ package edu.mtisw.payrollbackend.services;
 
 import edu.mtisw.payrollbackend.entities.BookingEntity;
 import edu.mtisw.payrollbackend.entities.ClientEntity;
+import edu.mtisw.payrollbackend.entities.KartEntity;
 import edu.mtisw.payrollbackend.entities.EmployeeEntity;
 import edu.mtisw.payrollbackend.repositories.BookingRepository;
 import edu.mtisw.payrollbackend.repositories.ClientRepository;
+import edu.mtisw.payrollbackend.repositories.KartRepository;
 import edu.mtisw.payrollbackend.services.ClientService;
 
 import org.hibernate.internal.build.AllowPrintStacktrace;
@@ -12,6 +14,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.integration.IntegrationProperties;
 import org.springframework.stereotype.Service;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import static java.util.Locale.filter;
 
 @Service
 public class BookingService {
@@ -22,7 +28,13 @@ public class BookingService {
     ClientRepository clientRepository;
 
     @Autowired
+    KartRepository kartRepository;
+
+    @Autowired
     ClientService clientService;
+
+    @Autowired
+    KartService kartService;
 
     public ArrayList<BookingEntity> getBooking(){
         return (ArrayList<BookingEntity>) bookingRepository.findAll();
@@ -48,6 +60,48 @@ public class BookingService {
         if (client == null) {
             throw new RuntimeException("Cliente no encontrado");
         }
+
+        //Esto es solo una idea de lo que podríamos hacer adicionalmente
+        /*
+
+        //Conseguimos los autos que se van a usar
+        List<KartEntity> karts =  kartService.getKart();
+
+        // Obtenemos la lista de autos disponibles usando Streams
+        List<KartEntity> ableKarts = karts.stream()
+                .filter(kart -> kart.getState() != null && kart.getState())
+                .collect(Collectors.toList());
+
+        //Imprimimos los autos habilitados
+        System.out.println("Auto habilitados: " + ableKarts.size());
+
+        // Iteramos sobre la lista de autos habilitados y los imprimimos
+        for (KartEntity kart : ableKarts) {
+            System.out.println("Auto: " + kart.getName() + ", Estado: " + kart.getState());
+        }
+
+
+        // Verificamos si hay suficientes autos disponibles
+        if (ableKarts.size() >= autosNecesarios) {
+            // Tomamos los autos necesarios
+            List<KartEntity> autosReservados = ableKarts.stream()
+                    .limit(autosNecesarios) // Tomamos solo la cantidad necesaria
+                    .collect(Collectors.toList());
+
+            // Actualizamos el estado de los autos reservados a "no disponibles"
+            autosReservados.forEach(kart -> {
+                kart.setState(false); // Actualizamos el estado del auto
+                System.out.println("Reservando auto: " + kart.getName());
+                // Guardamos los cambios en la base de datos (simulado aquí)
+                kartService.saveKart(kart); // Asegúrate de que `saveKart` esté implementado en el servicio
+            });
+
+            System.out.println("Reserva completada. Autos reservados: " + autosReservados.size());
+        } else {
+            // Si no hay suficientes autos disponibles
+            System.out.println("No hay suficientes autos disponibles para realizar la reserva.");
+        }
+        */
 
         //Vamos a conseguir los valores de cada opción de tarifa, la duración y las vueltas posibles
         int tarifaBase = 0;
