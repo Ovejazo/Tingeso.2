@@ -51,5 +51,5 @@ public class BookingEntity {
     private Integer optionFee;
 
     //Opción de día especial
-    private boolean dayEspecial;
+    private boolean especialDay;
 }
