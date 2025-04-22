@@ -62,6 +62,7 @@ public class BookingService {
         int duracionReservaMin = 0;
         int vueltas = 0;
 
+        //Aquí aplicamos una tarifa
         switch (booking.getOptionFee()) {
             case 1:
                 tarifaBase = 15000;
