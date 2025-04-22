@@ -28,4 +28,10 @@ public class BookingController {
         BookingEntity bookingNew = bookingService.saveBooking(booking);
         return ResponseEntity.ok(bookingNew);
     }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Boolean> deleteBookingById(@PathVariable Long id) throws Exception {
+        var isDeleted = bookingService.deleteBooking(id);
+        return ResponseEntity.noContent().build();
+    }
 }

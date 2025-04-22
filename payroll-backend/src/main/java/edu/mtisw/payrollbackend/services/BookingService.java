@@ -181,4 +181,15 @@ public class BookingService {
         */
 
     }
+
+    //Funcion para borrar
+    public boolean deleteBooking(Long id) throws Exception {
+        try{
+            bookingRepository.deleteById(id);
+            return true;
+        } catch (Exception e) {
+            throw new Exception(e.getMessage());
+        }
+
+    }
 }
