@@ -39,21 +39,21 @@ export default function Sidemenu({ open, toggleDrawer }) {
           <ListItemIcon>
             <PeopleAltIcon />
           </ListItemIcon>
-          <ListItemText primary="Empleados" />
+          <ListItemText primary="Clientes" />
         </ListItemButton>
 
         <ListItemButton onClick={() => navigate("/extraHours/list")}>
           <ListItemIcon>
             <MoreTimeIcon />
           </ListItemIcon>
-          <ListItemText primary="Horas Extra" />
+          <ListItemText primary="Reservas" />
         </ListItemButton>
 
         <ListItemButton onClick={() => navigate("/paycheck/list")}>
           <ListItemIcon>
             <PaidIcon />
           </ListItemIcon>
-          <ListItemText primary="Planilla Sueldos" />
+          <ListItemText primary="Rack semanal" />
         </ListItemButton>
 
         <ListItemButton onClick={() => navigate("/paycheck/calculate")}>

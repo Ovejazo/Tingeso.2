@@ -4,7 +4,7 @@ import Navbar from "./components/Navbar"
 import Home from './components/Home';
 import EmployeeList from './components/EmployeesList';
 import AddEditEmployee from './components/AddEditEmployee';
-import ExtraHoursList from './components/ExtraHoursList';
+import BookingList from './components/BookingList';
 import AddEditExtraHours from './components/AddEditExtraHours';
 import NotFound from './components/NotFound';
 import PaycheckList from './components/PaycheckList';
@@ -29,7 +29,7 @@ function App() {
               <Route path="/paycheck/list" element={<PaycheckList/>} />
               <Route path="/paycheck/calculate" element={<PaycheckCalculate/>} />
               <Route path="/reports/AnualReport" element={<AnualReport/>} />
-              <Route path="/extraHours/list" element={<ExtraHoursList/>} />
+              <Route path="/extraHours/list" element={<BookingList/>} />
               <Route path="/extraHours/add" element={<AddEditExtraHours/>} />
               <Route path="/extraHours/edit/:id" element={<AddEditExtraHours/>} />
               <Route path="*" element={<NotFound/>} />
