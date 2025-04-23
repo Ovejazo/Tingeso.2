@@ -41,7 +41,7 @@ public class BookingEntity {
     //Tiempo limite de la reserva
     private Integer limitTime;
 
-    //Nombre de la persona que hizo la reserva
+    //Nombre de la persona que hizo la reserva (Debe existir)
     private String mainPerson;
 
     //Rut de la persona que hizo la reserva (debe existir)
@@ -51,5 +51,5 @@ public class BookingEntity {
     private Integer optionFee;
 
     //Opción de día especial
-    private boolean especialDay;
+    private Boolean especialDay;
 }

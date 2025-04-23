@@ -55,6 +55,8 @@ public class BookingService {
         ClientEntity client = clientRepository.findByRut(booking.getPersonRUT());
         if (client == null) {
             throw new RuntimeException("Cliente no encontrado");
+        }if(client.getCash() <= 0){
+            throw new RuntimeException("El cliente no tiene dinero");
         }
 
         // Vamos a conseguir los valores de cada opción de tarifa, la duración y las vueltas posibles
@@ -83,12 +85,22 @@ public class BookingService {
                 throw new RuntimeException("Opción de tarifa inválida.");
         }
 
+        // Validamos si el cliente tiene suficiente dinero
+        if (client.getCash() < tarifaBase) {
+            throw new RuntimeException("El cliente no tiene suficiente saldo para realizar la reserva.");
+        }
+
         // Colocamos el tiempo máximo de la reserva
         booking.setLimitTime(duracionReservaMin);
 
         // Vamos a pensar en los descuentos por grupo
         int nPersonas = booking.getNumberOfPerson();
+
+        //Aquí van a ir todos los descuentos
+        double descuentoFrecuencia = 0;
         double descuentoGrupo = 0;
+        double descuentoCumplenos = 0;
+        double descuentoDiaEspecial = 0;
 
         if (nPersonas >= 3 && nPersonas <= 5) descuentoGrupo = 0.10;
         else if (nPersonas >= 6 && nPersonas <= 10) descuentoGrupo = 0.20;
@@ -96,25 +108,32 @@ public class BookingService {
 
         // Descuento por frecuencia
         int visitasCliente = client.getFrecuency();
-        double descuentoFrecuencia = 0;
+
 
         if (visitasCliente >= 7) descuentoFrecuencia = 0.30;
         else if (visitasCliente >= 5) descuentoFrecuencia = 0.20;
         else if (visitasCliente >= 2) descuentoFrecuencia = 0.10;
 
         // Vamos a conseguir el cumpleaños del cliente
-        double descuentoCumpleaños = 0;
-        boolean esCumpleaños = client.getDateOfBirth() == booking.getDateBooking();
-        if ((esCumpleaños) && (nPersonas >= 3)) {
-            if (nPersonas <= 5) descuentoCumpleaños = 0.5;
+
+        boolean esCumpleanos = client.getDateOfBirth() == booking.getDateBooking();
+        if ((esCumpleanos) && (nPersonas >= 3)) {
+            if (nPersonas <= 5) descuentoCumplenos = 0.5;
         }
 
         // Aplicamos los descuentos
-        double descuentoTotal = descuentoGrupo + descuentoFrecuencia + descuentoCumpleaños;
+        double descuentoTotal = descuentoGrupo + descuentoFrecuencia + descuentoCumplenos + descuentoDiaEspecial;
         System.out.println("\nDescuento grupo: " + descuentoGrupo);
         System.out.println("\nDescuento Frecuencia: " + descuentoFrecuencia);
-        System.out.println("\nDescuento Cumpleaños: " + descuentoCumpleaños);
+        System.out.println("\nDescuento Cumpleaños: " + descuentoCumplenos);
+        System.out.println("\nDescuento día especial: " + descuentoDiaEspecial);
         double totalSinIVA = tarifaBase - (tarifaBase * descuentoTotal);
+
+        //Vamos hacer el descuento en caso de que sea un día especial
+        if(booking.getEspecialDay()){
+            descuentoDiaEspecial = 0.05;
+        }
+
 
         /*
          * Calculamos el IVA

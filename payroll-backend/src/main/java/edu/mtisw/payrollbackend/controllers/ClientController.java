@@ -46,11 +46,11 @@ public class ClientController {
         ClientEntity clients = clientService.getClientById(id);
         return ResponseEntity.ok(clients);
     }
-
+*/
     @DeleteMapping("/{id}")
     public ResponseEntity<Boolean> deleteClientById(@PathVariable Long id) throws Exception {
         var isDeleted = clientService.deleteClient(id);
         return ResponseEntity.noContent().build();
     }
- */
+
 }

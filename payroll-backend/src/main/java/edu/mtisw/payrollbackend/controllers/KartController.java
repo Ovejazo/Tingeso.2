@@ -1,6 +1,7 @@
 package edu.mtisw.payrollbackend.controllers;
 
 import edu.mtisw.payrollbackend.entities.ClientEntity;
+import edu.mtisw.payrollbackend.entities.EmployeeEntity;
 import edu.mtisw.payrollbackend.entities.KartEntity;
 import edu.mtisw.payrollbackend.services.KartService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,5 +34,17 @@ public class KartController {
     public ResponseEntity<KartEntity> saveClient(@RequestBody KartEntity kart) {
         KartEntity kartsNew = kartService.saveKart(kart);
         return ResponseEntity.ok(kartsNew);
+    }
+
+    @PutMapping("/")
+    public ResponseEntity<KartEntity> updateKart(@RequestBody KartEntity kart){
+        KartEntity kartUpdated = kartService.updateKart(kart);
+        return ResponseEntity.ok(kartUpdated);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Boolean> deleteKartById(@PathVariable Long id) throws Exception {
+        var isDeleted = kartService.deleteKart(id);
+        return ResponseEntity.noContent().build();
     }
 }

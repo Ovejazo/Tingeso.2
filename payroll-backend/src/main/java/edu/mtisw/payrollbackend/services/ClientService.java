@@ -22,6 +22,26 @@ public class ClientService {
     }
 
     public ClientEntity saveClient(ClientEntity client){
+        //Revisamos que el cliente tenga nombre.
+        if (client.getName() == null || client.getName().trim().isEmpty()) {
+            throw new IllegalArgumentException("El nombre del cliente no puede estar vacío.");
+        }
+
+        //Revisamos que el RUT no sea nulo.
+        if (client.getRut() == null || client.getRut().trim().isEmpty()) {
+            throw new IllegalArgumentException("El RUT del cliente no puede estar vacío.");
+        }
+
+        //Validamos que el saldo no sea negativo
+        if (client.getCash() != null && client.getCash() < 0) {
+            throw new IllegalArgumentException("El saldo del cliente no puede ser negativo.");
+        }
+
+        // Revisar que el RUT no se repita
+        if (clientRepository.findByRut(client.getRut()) != null) {
+            throw new IllegalArgumentException("Ya existe un cliente registrado con el RUT: " + client.getRut());
+        }
+
         return clientRepository.save(client);
     }
 
@@ -31,6 +51,16 @@ public class ClientService {
 
     public ClientEntity updateClient(ClientEntity client) {
         return clientRepository.save(client);
+    }
+
+    public boolean deleteClient(Long id) throws Exception {
+        try{
+            clientRepository.deleteById(id);
+            return true;
+        } catch (Exception e) {
+            throw new Exception(e.getMessage());
+        }
+
     }
 
 }
