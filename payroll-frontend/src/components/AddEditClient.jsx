@@ -147,7 +147,7 @@ const AddEditClient = () => {
           <Button
             variant="contained"
             color="info"
-            onClick={(e) => saveClient(e)}
+            onClick={(e) => saveEmployee(e)}
             style={{ marginLeft: "0.5rem" }}
             startIcon={<SaveIcon />}
           >
