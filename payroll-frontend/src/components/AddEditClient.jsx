@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
-import employeeService from "../services/employee.service";
+import clientService from "../services/client.service";
 import Box from "@mui/material/Box";
 import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
@@ -18,17 +18,17 @@ const AddEditClient = () => {
   const [titleClientForm, setTitleClientForm] = useState("");
   const navigate = useNavigate();
 
-  const saveEmployee = (e) => {
+  const saveClient = (e) => {
     e.preventDefault();
 
     const client = { name, rut, cash, frecuency, dateOfBirth, id };
     if (id) {
       //Actualizar Datos Empelado
-      employeeService
+      clientService
         .update(client)
         .then((response) => {
           console.log("Empleado ha sido actualizado.", response.data);
-          navigate("/employee/list");
+          navigate("/client/list");
         })
         .catch((error) => {
           console.log(
@@ -38,11 +38,11 @@ const AddEditClient = () => {
         });
     } else {
       //Crear nuevo empleado
-      employeeService
+      clientService
         .create(client)
         .then((response) => {
           console.log("Empleado ha sido añadido.", response.data);
-          navigate("/employee/list");
+          navigate("/client/list");
         })
         .catch((error) => {
           console.log(
@@ -56,7 +56,7 @@ const AddEditClient = () => {
   useEffect(() => {
     if (id) {
       setTitleClientForm("Editar Empleado");
-      employeeService
+      clientService
         .get(id)
         .then((client) => {
           setName(client.data.name);
@@ -107,8 +107,8 @@ const AddEditClient = () => {
 
         <FormControl fullWidth>
           <TextField
-            id="salary"
-            label="Salary"
+            id="cash"
+            label="Cash"
             type="number"
             value={cash}
             variant="standard"
@@ -119,8 +119,8 @@ const AddEditClient = () => {
 
         <FormControl fullWidth>
           <TextField
-            id="children"
-            label="Children"
+            id="frecuency"
+            label="Frecuency"
             type="number"
             value={frecuency}
             variant="standard"
@@ -130,19 +130,16 @@ const AddEditClient = () => {
 
         <FormControl fullWidth>
           <TextField
-            id="category"
-            label="Category"
+            id="dateOfBirth"
+            label="Fecha de Nacimiento"
+            type="date"
             value={dateOfBirth}
-            select
             variant="standard"
-            defaultValue="A"
             onChange={(e) => setDateOfBirth(e.target.value)}
-            style={{ width: "25%" }}
-          >
-            <MenuItem value={"A"}>A</MenuItem>
-            <MenuItem value={"B"}>B</MenuItem>
-            <MenuItem value={"C"}>C</MenuItem>
-          </TextField>
+            InputLabelProps={{
+              shrink: true, // Esto asegura que la etiqueta no se superponga al valor
+            }}
+          />
         </FormControl>
 
         <FormControl>
