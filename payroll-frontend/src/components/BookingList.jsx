@@ -12,11 +12,10 @@ import Button from "@mui/material/Button";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
-import ReceiptIcon from '@mui/icons-material/Receipt'; // Nuevo import para el ícono de comprobante
+import ReceiptIcon from '@mui/icons-material/Receipt';
 
 const BookingList = () => {
   const [booking, setBooking] = useState([]);
-
   const navigate = useNavigate();
 
   const init = () => {
@@ -44,7 +43,7 @@ const BookingList = () => {
       "¿Esta seguro que desea borrar este cliente?"
     );
     if (confirmDelete) {
-        bookingService
+      bookingService
         .remove(id)
         .then((response) => {
           console.log("Cliente ha sido eliminado.", response.data);
@@ -64,11 +63,8 @@ const BookingList = () => {
     navigate(`/booking/edit/${id}`);
   };
 
-  // Nueva función para manejar la visualización del comprobante
   const handleShowReceipt = (id) => {
     console.log("Mostrando comprobante para id:", id);
-    // Aquí puedes agregar la lógica para mostrar el comprobante
-    // Por ejemplo, navegar a una nueva ruta o abrir un modal
     navigate(`/booking/receipt/${id}`);
   };
 
@@ -92,72 +88,106 @@ const BookingList = () => {
         <TableHead>
           <TableRow>
             <TableCell align="left" sx={{ fontWeight: "bold" }}>
-                Codigo
+              Codigo
             </TableCell>
             <TableCell align="left" sx={{ fontWeight: "bold" }}>
-                Fecha de reserva
-            </TableCell>
-            <TableCell align="right" sx={{ fontWeight: "bold" }}>
-                Tiempo limite
-            </TableCell>
-            <TableCell align="right" sx={{ fontWeight: "bold" }}>
-                Rut del cliente
-            </TableCell>
-            <TableCell align="right" sx={{ fontWeight: "bold" }}>
-                Grupo de la persona
+              Fecha de reserva
             </TableCell>
             <TableCell align="left" sx={{ fontWeight: "bold" }}>
-                
+              Hora de inicio
+            </TableCell>
+            <TableCell align="left" sx={{ fontWeight: "bold" }}>
+              Hora de fin
+            </TableCell>
+            <TableCell align="right" sx={{ fontWeight: "bold" }}>
+              Tiempo limite
+            </TableCell>
+            <TableCell align="right" sx={{ fontWeight: "bold" }}>
+              Rut del cliente
+            </TableCell>
+            <TableCell align="right" sx={{ fontWeight: "bold" }}>
+              Grupo de la persona
+            </TableCell>
+            <TableCell align="left" sx={{ fontWeight: "bold" }}>
             </TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
-          {booking.map((booking) => (
-            <TableRow
-              key={booking.id}
-              sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
-            >
-              <TableCell align="left">{booking.codigo}</TableCell>
-              <TableCell align="left">{booking.dateBooking}</TableCell>
-              <TableCell align="right">{booking.limitTime}</TableCell>
-              <TableCell align="right">{booking.personRUT}</TableCell>
-              <TableCell align="right">{booking.numberOfPerson}</TableCell>
-              <TableCell>
-                <Button
-                  variant="contained"
-                  color="info"
-                  size="small"
-                  onClick={() => handleEdit(booking.id)}
-                  style={{ marginLeft: "0.5rem" }}
-                  startIcon={<EditIcon />}
-                >
-                  Editar
-                </Button>
+          {booking.map((booking) => {
+            const formatDate = (date) => {
+              if (!date) return '';
+              const options = {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+              };
+              return new Date(date).toLocaleDateString('es-CL', options);
+            };
 
-                <Button
-                  variant="contained"
-                  color="error"
-                  size="small"
-                  onClick={() => handleDelete(booking.id)}
-                  style={{ marginLeft: "0.5rem" }}
-                  startIcon={<DeleteIcon />}
-                >
-                  Eliminar
-                </Button>
+            const formatTime = (date) => {
+              if (!date) return '';
+              const options = {
+                hour: '2-digit',
+                minute: '2-digit'
+              };
+              return new Date(date).toLocaleTimeString('es-CL', options);
+            };
 
-                <Button
-                  variant="contained"
-                  color="success"
-                  size="small"
-                  onClick={() => handleShowReceipt(booking.id)}
-                  style={{ marginLeft: "0.5rem" }}
-                  startIcon={<ReceiptIcon />}
-                >
-                  Comprobante
-                </Button>
-              </TableCell>
-            </TableRow>
-          ))}
+            const initialTime = formatTime(booking.initialTime);
+            const finalTime = formatTime(booking.finalTime);
+            const dateBooking = formatDate(booking.dateBooking);
+
+            return (
+              <TableRow
+                key={booking.id}
+                sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
+              >
+                <TableCell align="left">{booking.codigo}</TableCell>
+                <TableCell align="left">{dateBooking}</TableCell>
+                <TableCell align="left">{initialTime}</TableCell>
+                <TableCell align="left">{finalTime}</TableCell>
+                <TableCell align="right">{booking.limitTime}</TableCell>
+                <TableCell align="right">{booking.personRUT}</TableCell>
+                <TableCell align="right">{booking.numberOfPerson}</TableCell>
+                <TableCell>
+                  <Button
+                    variant="contained"
+                    color="info"
+                    size="small"
+                    onClick={() => handleEdit(booking.id)}
+                    style={{ marginLeft: "0.5rem" }}
+                    startIcon={<EditIcon />}
+                  >
+                    Editar
+                  </Button>
+
+                  <Button
+                    variant="contained"
+                    color="error"
+                    size="small"
+                    onClick={() => handleDelete(booking.id)}
+                    style={{ marginLeft: "0.5rem" }}
+                    startIcon={<DeleteIcon />}
+                  >
+                    Eliminar
+                  </Button>
+
+                  <Button
+                    variant="contained"
+                    color="success"
+                    size="small"
+                    onClick={() => handleShowReceipt(booking.id)}
+                    style={{ marginLeft: "0.5rem" }}
+                    startIcon={<ReceiptIcon />}
+                  >
+                    Comprobante
+                  </Button>
+                </TableCell>
+              </TableRow>
+            );
+          })}
         </TableBody>
       </Table>
     </TableContainer>

@@ -140,21 +140,6 @@ const AddEditBooking = () => {
 
         <FormControl fullWidth sx={{ mb: 2 }}>
           <TextField
-            id="finalTime"
-            label="Hora Final"
-            type="time"
-            value={finalTime}
-            variant="outlined"
-            InputLabelProps={{
-              shrink: true,
-            }}
-            onChange={(e) => setFinalTime(e.target.value)}
-            required
-          />
-        </FormControl>
-
-        <FormControl fullWidth sx={{ mb: 2 }}>
-          <TextField
             id="numberOfPerson"
             label="Número de Personas"
             type="number"
