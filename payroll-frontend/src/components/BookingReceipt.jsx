@@ -176,6 +176,22 @@ const BookingReceipt = () => {
             </Grid>
           </CardContent>
         </Card>
+        <Box sx={{ mt: 2, mb: 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
+          <Typography 
+            variant="body2" 
+            color="success.main" 
+            sx={{ 
+              backgroundColor: 'success.light', 
+              color: 'success.contrastText',
+              padding: '8px 16px',
+              borderRadius: '4px',
+              display: 'inline-flex',
+              alignItems: 'center'
+            }}
+          >
+            ✓ Comprobante enviado al correo electrónico
+          </Typography>
+        </Box>
 
         <Typography variant="caption" display="block" sx={{ mt: 2, textAlign: 'right' }}>
           Emitido el: {new Date().toLocaleString()}
