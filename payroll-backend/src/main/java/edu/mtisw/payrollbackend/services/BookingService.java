@@ -1,9 +1,6 @@
 package edu.mtisw.payrollbackend.services;
 
-import edu.mtisw.payrollbackend.entities.BookingEntity;
-import edu.mtisw.payrollbackend.entities.ClientEntity;
-import edu.mtisw.payrollbackend.entities.KartEntity;
-import edu.mtisw.payrollbackend.entities.EmployeeEntity;
+import edu.mtisw.payrollbackend.entities.*;
 import edu.mtisw.payrollbackend.repositories.BookingRepository;
 import edu.mtisw.payrollbackend.repositories.ClientRepository;
 import edu.mtisw.payrollbackend.repositories.KartRepository;
@@ -214,6 +211,77 @@ public class BookingService {
 
     public BookingEntity getBookingById(Long id){
         return bookingRepository.findById(id).get();
+    }
+
+    public VoucherEntity getVoucherById(Long id) {
+
+
+        //Obtnemos la reserva con la que vamos a trabajar
+        BookingEntity booking = bookingRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Reserva no encontrada"));
+
+        //Obtenemos el cliente para conseguir su nombre y RUT
+        ClientEntity client = clientRepository.findByRut(booking.getPersonRUT());
+        if (client == null) {
+            throw new RuntimeException("Cliente no encontrado");
+        }
+
+        //Creamos la instancia Voucher
+        VoucherEntity voucher = new VoucherEntity();
+
+        //Colocamos las cosas iniciales
+        voucher.setName(booking.getMainPerson());
+        voucher.setRut(booking.getPersonRUT());
+        voucher.setDateBooking(booking.getDateBooking());
+
+        // Calcular tarifa base según la opción
+        int tarifaBase = 0;
+        switch (booking.getOptionFee()) {
+            case 1: tarifaBase = 15000; break;
+            case 2: tarifaBase = 20000; break;
+            case 3: tarifaBase = 25000; break;
+            default: throw new RuntimeException("Opción de tarifa inválida");
+        }
+        voucher.setFee(tarifaBase);
+
+        //Inicializamos los descuentos
+        double descuentoTotal = 0.0;
+
+        // Descuento por grupo
+        int nPersonas = booking.getNumberOfPerson();
+        if (nPersonas >= 3 && nPersonas <= 5) descuentoTotal += 0.10;
+        else if (nPersonas >= 6 && nPersonas <= 10) descuentoTotal += 0.20;
+        else if (nPersonas >= 11 && nPersonas <= 15) descuentoTotal += 0.30;
+
+        // Descuento por frecuencia
+        int visitasCliente = client.getFrecuency();
+        if (visitasCliente >= 7) descuentoTotal += 0.30;
+        else if (visitasCliente >= 5) descuentoTotal += 0.20;
+        else if (visitasCliente >= 2) descuentoTotal += 0.10;
+
+        // Descuento por cumpleaños
+        boolean esCumpleanos = client.getDateOfBirth().equals(booking.getDateBooking());
+        if (esCumpleanos && nPersonas >= 3 && nPersonas <= 5) {
+            descuentoTotal += 0.5;
+        }
+
+        // Descuento por día especial
+        if (booking.getEspecialDay()) {
+            descuentoTotal += 0.05;
+        }
+
+        // Establecer descuento total
+        voucher.setDiscount(descuentoTotal);
+
+        // Calcular total sin IVA
+        double totalSinIVA = tarifaBase * (1 - descuentoTotal);
+
+        // Calcular IVA (19%)
+        int iva = (int) (totalSinIVA * 0.19);
+        voucher.setIva(iva);
+
+        // Retornar el voucher creado
+        return voucher;
     }
 }
 

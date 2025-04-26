@@ -1,5 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react"; // Añadido useRef
 import { useParams } from "react-router-dom";
+import { useReactToPrint } from 'react-to-print'; // Añadido import
+import html2pdf from 'html2pdf.js'; // Añadido import
 import bookingService from "../services/booking.service";
 import {
   Paper,
@@ -10,26 +12,55 @@ import {
   Box,
   Card,
   CardContent,
+  Button, // Añadido Button
+  Stack, // Añadido Stack
 } from "@mui/material";
+import PrintIcon from '@mui/icons-material/Print';
+import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf'; // Añadido PictureAsPdfIcon
 
 const BookingReceipt = () => {
+  const [voucher, setVoucher] = useState(null);
   const [booking, setBooking] = useState(null);
   const { id } = useParams();
+  const componentRef = useRef();
+
+  const handlePrint = useReactToPrint({
+    content: () => componentRef.current,
+  });
+
+  // Función para generar PDF
+  const generatePDF = () => {
+    const element = componentRef.current;
+    const opt = {
+      margin: 1,
+      filename: `comprobante-reserva-${id}.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: 'cm', format: 'a4', orientation: 'portrait' }
+    };
+
+    html2pdf().set(opt).from(element).save();
+  };
 
   useEffect(() => {
-    const fetchBooking = async () => {
+    const fetchData = async () => {
       try {
-        const response = await bookingService.get(id);
-        setBooking(response.data);
+        // Obtener el voucher basado en el ID de la reserva
+        const voucherResponse = await bookingService.getVoucher(id);
+        setVoucher(voucherResponse.data);
+        
+        // También obtenemos la reserva para mostrar datos adicionales
+        const bookingResponse = await bookingService.get(id);
+        setBooking(bookingResponse.data);
       } catch (error) {
-        console.error("Error al cargar la reserva:", error);
+        console.error("Error al cargar los datos:", error);
       }
     };
 
-    fetchBooking();
+    fetchData();
   }, [id]);
 
-  if (!booking) {
+  if (!voucher || !booking) {
     return <Typography>Cargando...</Typography>;
   }
 
@@ -49,7 +80,31 @@ const BookingReceipt = () => {
 
   return (
     <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
-      <Paper elevation={3} sx={{ p: 4 }}>
+      {/* Botones de acción */}
+      <Stack 
+        direction="row" 
+        spacing={2} 
+        sx={{ mb: 2 }}
+        justifyContent="flex-end"
+      >
+        <Button 
+          variant="contained" 
+          startIcon={<PrintIcon />}
+          onClick={handlePrint}
+        >
+          Imprimir
+        </Button>
+        <Button 
+          variant="contained" 
+          startIcon={<PictureAsPdfIcon />}
+          onClick={generatePDF}
+        >
+          Descargar PDF
+        </Button>
+      </Stack>
+
+      {/* Contenido para imprimir/PDF */}
+      <Paper elevation={3} sx={{ p: 4 }} ref={componentRef}>
         <Typography variant="h4" gutterBottom>
           Comprobante de Reserva
         </Typography>
@@ -59,13 +114,18 @@ const BookingReceipt = () => {
         {/* Información básica de la reserva */}
         <Grid container spacing={2} sx={{ mb: 4 }}>
           <Grid item xs={6}>
+            <Typography variant="subtitle2">Nombre Cliente:</Typography>
+            <Typography>{voucher.name}</Typography>
+          </Grid>
+          
+          <Grid item xs={6}>
             <Typography variant="subtitle2">RUT Cliente:</Typography>
-            <Typography>{booking.personRUT}</Typography>
+            <Typography>{voucher.rut}</Typography>
           </Grid>
           
           <Grid item xs={6}>
             <Typography variant="subtitle2">Fecha de Reserva:</Typography>
-            <Typography>{new Date(booking.dateBooking).toLocaleDateString()}</Typography>
+            <Typography>{new Date(voucher.dateBooking).toLocaleDateString()}</Typography>
           </Grid>
 
           <Grid item xs={6}>
@@ -79,52 +139,15 @@ const BookingReceipt = () => {
           </Grid>
         </Grid>
 
-        {/* Caja de descuentos */}
         <Card variant="outlined" sx={{ mb: 3 }}>
           <CardContent>
             <Typography variant="h6" gutterBottom>
               Descuentos Aplicados
             </Typography>
             
-            {/* Descuento por grupo */}
-            {booking.numberOfPerson >= 3 && (
-              <Box sx={{ mb: 1 }}>
-                <Typography variant="body2">
-                  Descuento por grupo ({booking.numberOfPerson} personas):
-                  {booking.numberOfPerson >= 11 ? " 30%" :
-                   booking.numberOfPerson >= 6 ? " 20%" : " 10%"}
-                </Typography>
-              </Box>
-            )}
-
-            {/* Descuento por frecuencia */}
-            {booking.client?.frecuency >= 2 && (
-              <Box sx={{ mb: 1 }}>
-                <Typography variant="body2">
-                  Descuento por frecuencia ({booking.client.frecuency} visitas):
-                  {booking.client.frecuency >= 7 ? " 30%" :
-                   booking.client.frecuency >= 5 ? " 20%" : " 10%"}
-                </Typography>
-              </Box>
-            )}
-
-            {/* Descuento por cumpleaños */}
-            {booking.client?.dateOfBirth === booking.dateBooking && booking.numberOfPerson >= 3 && (
-              <Box sx={{ mb: 1 }}>
-                <Typography variant="body2">
-                  Descuento por cumpleaños: 50%
-                </Typography>
-              </Box>
-            )}
-
-            {/* Descuento por día especial */}
-            {booking.especialDay && (
-              <Box sx={{ mb: 1 }}>
-                <Typography variant="body2">
-                  Descuento por día especial: 5%
-                </Typography>
-              </Box>
-            )}
+            <Typography variant="body2">
+              Descuento Total: {(voucher.discount != null ? (voucher.discount * 100).toFixed(0) : 0)}%
+            </Typography>
           </CardContent>
         </Card>
 
@@ -141,8 +164,7 @@ const BookingReceipt = () => {
               </Grid>
               <Grid item xs={6}>
                 <Typography align="right">
-                  ${booking.optionFee === 1 ? "15.000" :
-                     booking.optionFee === 2 ? "20.000" : "25.000"}
+                  ${voucher.fee.toLocaleString()}
                 </Typography>
               </Grid>
 
@@ -155,8 +177,7 @@ const BookingReceipt = () => {
               </Grid>
               <Grid item xs={6}>
                 <Typography align="right">
-                  ${(booking.optionFee === 1 ? 2850 :
-                     booking.optionFee === 2 ? 3800 : 4750).toLocaleString()}
+                  ${voucher.iva.toLocaleString()}
                 </Typography>
               </Grid>
 
@@ -169,13 +190,13 @@ const BookingReceipt = () => {
               </Grid>
               <Grid item xs={6}>
                 <Typography variant="h6" align="right">
-                  ${(booking.optionFee === 1 ? 17850 :
-                     booking.optionFee === 2 ? 23800 : 29750).toLocaleString()}
+                  ${((voucher.fee * (1 - voucher.discount)) + voucher.iva).toLocaleString()}
                 </Typography>
               </Grid>
             </Grid>
           </CardContent>
         </Card>
+
         <Box sx={{ mt: 2, mb: 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
           <Typography 
             variant="body2" 
@@ -189,7 +210,7 @@ const BookingReceipt = () => {
               alignItems: 'center'
             }}
           >
-            ✓ Comprobante enviado al correo electrónico
+            ✓ Comprobante generado exitosamente
           </Typography>
         </Box>
 
