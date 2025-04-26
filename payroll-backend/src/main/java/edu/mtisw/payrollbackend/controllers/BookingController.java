@@ -3,6 +3,7 @@ package edu.mtisw.payrollbackend.controllers;
 
 import edu.mtisw.payrollbackend.entities.BookingEntity;
 import edu.mtisw.payrollbackend.entities.ClientEntity;
+import edu.mtisw.payrollbackend.entities.EmployeeEntity;
 import edu.mtisw.payrollbackend.services.BookingService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -20,6 +21,12 @@ public class BookingController {
     @GetMapping("/")
     public ResponseEntity<List<BookingEntity>> listClient() {
         List<BookingEntity> booking = bookingService.getBooking();
+        return ResponseEntity.ok(booking);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<BookingEntity> getBookingById(@PathVariable Long id) {
+        BookingEntity booking = bookingService.getBookingById(id);
         return ResponseEntity.ok(booking);
     }
 

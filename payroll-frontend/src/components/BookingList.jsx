@@ -12,6 +12,7 @@ import Button from "@mui/material/Button";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
+import ReceiptIcon from '@mui/icons-material/Receipt'; // Nuevo import para el ícono de comprobante
 
 const BookingList = () => {
   const [booking, setBooking] = useState([]);
@@ -61,6 +62,14 @@ const BookingList = () => {
   const handleEdit = (id) => {
     console.log("Printing id", id);
     navigate(`/booking/edit/${id}`);
+  };
+
+  // Nueva función para manejar la visualización del comprobante
+  const handleShowReceipt = (id) => {
+    console.log("Mostrando comprobante para id:", id);
+    // Aquí puedes agregar la lógica para mostrar el comprobante
+    // Por ejemplo, navegar a una nueva ruta o abrir un modal
+    navigate(`/booking/receipt/${id}`);
   };
 
   return (
@@ -134,6 +143,17 @@ const BookingList = () => {
                   startIcon={<DeleteIcon />}
                 >
                   Eliminar
+                </Button>
+
+                <Button
+                  variant="contained"
+                  color="success"
+                  size="small"
+                  onClick={() => handleShowReceipt(booking.id)}
+                  style={{ marginLeft: "0.5rem" }}
+                  startIcon={<ReceiptIcon />}
+                >
+                  Comprobante
                 </Button>
               </TableCell>
             </TableRow>

@@ -13,6 +13,7 @@ import AnualReport from './components/AnualReport';
 import Login from './components/Login';
 import ClientList from './components/ClientList';
 import AddEditClient from './components/AddEditClient';
+import BookingReceipt from './components/BookingReceipt';
 
 function App() {
   return (
@@ -34,6 +35,7 @@ function App() {
               <Route path="/extraHours/list" element={<BookingList/>} />
               <Route path="/booking/add" element={<AddEditBooking/>} />
               <Route path="/extraHours/edit/:id" element={<AddEditBooking/>} />
+              <Route path="/booking/receipt/:id" element={<BookingReceipt/>} />
               <Route path="*" element={<NotFound/>} />
             </Routes>
           </div>

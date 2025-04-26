@@ -211,4 +211,10 @@ public class BookingService {
         }
 
     }
+
+    public BookingEntity getBookingById(Long id){
+        return bookingRepository.findById(id).get();
+    }
 }
+
+
