@@ -182,7 +182,7 @@ const BookingList = () => {
                     style={{ marginLeft: "0.5rem" }}
                     startIcon={<ReceiptIcon />}
                   >
-                    Comprobante
+                    Ticket
                   </Button>
                 </TableCell>
               </TableRow>
