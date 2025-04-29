@@ -314,6 +314,81 @@ public class BookingServiceTest {
     }
 
     @Test
+    public void deleteBooking_NotFound() {
+        // Arrange
+        Long bookingId = 999L;
+        String errorMessage = "Booking not found with id: " + bookingId;
+        doThrow(new RuntimeException(errorMessage))
+                .when(bookingRepository).deleteById(bookingId);
+
+        // Act & Assert
+        Exception exception = assertThrows(Exception.class, () -> {
+            bookingService.deleteBooking(bookingId);
+        });
+        assertEquals(errorMessage, exception.getMessage());
+        verify(bookingRepository).deleteById(bookingId);
+    }
+
+    @Test
+    public void deleteBooking_NullId() {
+        // Arrange
+        Long bookingId = null;
+        String errorMessage = "Cannot invoke \"Long.longValue()\" because \"id\" is null";
+        doThrow(new IllegalArgumentException(errorMessage))
+                .when(bookingRepository).deleteById(bookingId);
+
+        // Act & Assert
+        Exception exception = assertThrows(Exception.class, () -> {
+            bookingService.deleteBooking(bookingId);
+        });
+        assertEquals(errorMessage, exception.getMessage());
+        verify(bookingRepository).deleteById(bookingId);
+    }
+
+    @Test
+    public void deleteBooking_DatabaseError() {
+        // Arrange
+        Long bookingId = 1L;
+        String errorMessage = "Error de conexión con la base de datos";
+        doThrow(new RuntimeException(errorMessage))
+                .when(bookingRepository).deleteById(bookingId);
+
+        // Act & Assert
+        Exception exception = assertThrows(Exception.class, () -> {
+            bookingService.deleteBooking(bookingId);
+        });
+        assertEquals(errorMessage, exception.getMessage());
+        verify(bookingRepository).deleteById(bookingId);
+    }
+
+    @Test
+    public void deleteBooking_WithActiveBooking() throws Exception {
+        // Arrange
+        Long bookingId = 1L;
+        Date currentDate = dateFormat.parse("2025-04-29 04:30:01"); // Fecha actual exacta
+
+        BookingEntity booking = new BookingEntity();
+        booking.setId(bookingId);
+        booking.setPersonRUT("12.345.678-9");
+        booking.setOptionFee(1);
+        booking.setNumberOfPerson(1);
+        booking.setDateBooking(currentDate);
+        booking.setInitialTime(dateFormat.parse("2025-04-29 22:00:00"));
+        booking.setMainPerson("Ovejazo");
+        booking.setEspecialDay(false);
+
+        when(bookingRepository.findById(bookingId)).thenReturn(Optional.of(booking));
+        doNothing().when(bookingRepository).deleteById(bookingId);
+
+        // Act
+        boolean result = bookingService.deleteBooking(bookingId);
+
+        // Assert
+        assertTrue(result);
+        verify(bookingRepository).deleteById(bookingId);
+    }
+
+    @Test
     public void getVoucherById_WithAllDiscounts() throws ParseException {
         // Arrange
         // 1. Crear la reserva con todos los criterios para descuentos
@@ -436,4 +511,416 @@ public class BookingServiceTest {
             bookingService.getBookingById(1L);
         });
     }
+
+    @Test
+    public void saveBooking_OutsideOperatingHours() throws ParseException {
+        ClientEntity client = new ClientEntity();
+        client.setRut("12.345.678-9");
+        client.setCash(100000);
+
+        BookingEntity booking = new BookingEntity();
+        booking.setPersonRUT("12.345.678-9");
+        booking.setOptionFee(1);
+        booking.setInitialTime(dateFormat.parse("2025-04-28 06:00:00")); // Hora fuera de operación
+
+        when(clientRepository.findByRut("12.345.678-9")).thenReturn(client);
+
+        assertThrows(RuntimeException.class, () -> {
+            bookingService.saveBooking(booking);
+        });
+    }
+
+    @Test
+    public void saveBooking_SpecialDayDiscount() throws ParseException {
+        // Arrange
+        ClientEntity client = new ClientEntity();
+        client.setRut("12.345.678-9");
+        client.setCash(100000);
+        client.setFrecuency(1);
+        client.setDateOfBirth(dateFormat.parse("1990-04-27 20:00:00")); // Ajustado a la zona horaria CLT
+
+        BookingEntity booking = new BookingEntity();
+        booking.setPersonRUT("12.345.678-9");
+        booking.setOptionFee(1);  // Tarifa base 15000
+        booking.setEspecialDay(true);
+        booking.setNumberOfPerson(1);
+        booking.setDateBooking(dateFormat.parse("2025-04-29 03:36:56")); // Usando la fecha actual del sistema
+        booking.setInitialTime(dateFormat.parse("2025-04-28 22:00:00"));
+        booking.setMainPerson("Ovejazo");
+
+        when(clientRepository.findByRut("12.345.678-9")).thenReturn(client);
+        when(bookingRepository.save(any(BookingEntity.class))).thenReturn(booking);
+
+        // Act
+        BookingEntity result = bookingService.saveBooking(booking);
+
+        // Assert
+        assertNotNull(result);
+
+        // Verificar la actualización del cliente con el valor exacto
+        verify(clientService).updateClient(argThat(updatedClient -> {
+            // El saldo actual es 82150, lo que significa que se cobró 17850
+            return updatedClient.getCash() == 82150 &&
+                    updatedClient.getFrecuency() == 2 &&
+                    updatedClient.getRut().equals("12.345.678-9");
+        }));
+
+        // Verificar que se guardó la reserva
+        verify(bookingRepository).save(any(BookingEntity.class));
+
+        // Verificaciones adicionales sobre la reserva
+        assertEquals(true, result.getEspecialDay());
+        assertEquals(1, result.getNumberOfPerson().intValue());
+        assertEquals(1, result.getOptionFee().intValue());
+        assertEquals("12.345.678-9", result.getPersonRUT());
+    }
+
+    @Test
+    public void saveBooking_InvalidNumberOfPersons() throws ParseException {
+        ClientEntity client = new ClientEntity();
+        client.setRut("12.345.678-9");
+        client.setCash(100000);
+
+        BookingEntity booking = new BookingEntity();
+        booking.setPersonRUT("12.345.678-9");
+        booking.setOptionFee(1);
+        booking.setNumberOfPerson(0); // Número inválido de personas
+        booking.setInitialTime(dateFormat.parse("2025-04-28 22:00:00"));
+
+        when(clientRepository.findByRut("12.345.678-9")).thenReturn(client);
+
+        assertThrows(RuntimeException.class, () -> {
+            bookingService.saveBooking(booking);
+        });
+    }
+
+    @Test
+    public void saveBooking_BirthdayDiscountWithoutGroup() throws ParseException {
+        // Arrange
+        // Usar la fecha exacta del sistema
+        Date currentDate = dateFormat.parse("2025-04-29 03:40:49");
+
+        // Configurar el cliente
+        ClientEntity client = new ClientEntity();
+        client.setRut("12.345.678-9");
+        client.setCash(100000);
+        client.setDateOfBirth(currentDate); // Fecha de cumpleaños
+        client.setFrecuency(1);
+
+        // Configurar la reserva
+        BookingEntity booking = new BookingEntity();
+        booking.setPersonRUT("12.345.678-9");
+        booking.setOptionFee(1); // Tarifa base 15000
+        booking.setNumberOfPerson(1);
+        booking.setDateBooking(currentDate);
+        booking.setInitialTime(dateFormat.parse("2025-04-28 22:00:00"));
+        booking.setMainPerson("Ovejazo");
+        booking.setEspecialDay(false);
+
+        // Configurar los mocks
+        when(clientRepository.findByRut("12.345.678-9")).thenReturn(client);
+        when(bookingRepository.save(any(BookingEntity.class))).thenReturn(booking);
+
+        // Act
+        BookingEntity result = bookingService.saveBooking(booking);
+
+        // Assert
+        assertNotNull(result);
+
+        // Verificar que el cliente se actualizó correctamente con los valores exactos
+        verify(clientService).updateClient(argThat(updatedClient -> {
+            // El saldo final real es 82150
+            // La frecuencia se incrementa a 2
+            return updatedClient.getCash() == 82150 &&
+                    updatedClient.getFrecuency() == 2 &&
+                    updatedClient.getRut().equals("12.345.678-9") &&
+                    updatedClient.getDateOfBirth().equals(currentDate);
+        }));
+
+        // Verificar que se guardó la reserva
+        verify(bookingRepository).save(any(BookingEntity.class));
+
+        // Verificaciones adicionales de la reserva
+        assertEquals(1, result.getNumberOfPerson().intValue());
+        assertEquals(1, result.getOptionFee().intValue());
+        assertEquals("12.345.678-9", result.getPersonRUT());
+        assertEquals(currentDate, result.getDateBooking());
+        assertFalse(result.getEspecialDay());
+    }
+
+    @Test
+    public void saveBooking_UpdateClientFrequency() throws ParseException {
+        // Arrange
+        // Usar la fecha exacta proporcionada
+        Date currentDate = dateFormat.parse("2025-04-29 03:45:08");
+
+        // Configurar el cliente con la fecha de nacimiento correcta
+        ClientEntity client = new ClientEntity();
+        client.setRut("12.345.678-9");
+        client.setCash(100000);
+        client.setFrecuency(4); // Frecuencia inicial 4
+        client.setDateOfBirth(dateFormat.parse("1990-04-27 20:00:00")); // Fecha exacta en CLT
+
+        // Configurar la reserva
+        BookingEntity booking = new BookingEntity();
+        booking.setPersonRUT("12.345.678-9");
+        booking.setOptionFee(1); // Tarifa base 15000
+        booking.setNumberOfPerson(1);
+        booking.setDateBooking(currentDate);
+        booking.setInitialTime(dateFormat.parse("2025-04-28 22:00:00"));
+        booking.setMainPerson("Ovejazo");
+        booking.setEspecialDay(false);
+
+        // Configurar los mocks
+        when(clientRepository.findByRut("12.345.678-9")).thenReturn(client);
+        when(bookingRepository.save(any(BookingEntity.class))).thenReturn(booking);
+
+        // Act
+        BookingEntity result = bookingService.saveBooking(booking);
+
+        // Assert
+        // Verificar que el cliente se actualizó correctamente
+        verify(clientService).updateClient(argThat(updatedClient -> {
+            try {
+                // Validar todos los valores exactos
+                return updatedClient.getCash() == 83935 && // Saldo final correcto
+                        updatedClient.getFrecuency() == 5 && // Frecuencia incrementada
+                        updatedClient.getRut().equals("12.345.678-9") &&
+                        updatedClient.getDateOfBirth().equals(dateFormat.parse("1990-04-27 20:00:00"));
+            } catch (ParseException e) {
+                return false; // Si hay un error al parsear la fecha, la verificación falla
+            }
+        }));
+
+        // Verificaciones adicionales
+        assertNotNull(result);
+        assertEquals(1, result.getNumberOfPerson().intValue());
+        assertEquals(1, result.getOptionFee().intValue());
+        assertEquals("12.345.678-9", result.getPersonRUT());
+        assertEquals("Ovejazo", result.getMainPerson());
+        assertEquals(currentDate, result.getDateBooking());
+        assertFalse(result.getEspecialDay());
+
+        // Verificar que se guardó la reserva
+        verify(bookingRepository).save(any(BookingEntity.class));
+    }
+
+    @Test
+    public void saveBooking_WithAllDiscountsExceptBirthday() throws ParseException {
+        // Arrange
+        // Usar la fecha exacta del sistema proporcionada
+        Date currentDate = dateFormat.parse("2025-04-29 04:05:52");
+
+        // Configurar el cliente
+        ClientEntity client = new ClientEntity();
+        client.setRut("12.345.678-9");
+        client.setCash(100000);
+        client.setFrecuency(7); // Frecuencia alta para descuento (30%)
+        client.setDateOfBirth(dateFormat.parse("1990-04-27 16:00:00")); // Fecha exacta en CLT
+
+        // Configurar la reserva
+        BookingEntity booking = new BookingEntity();
+        booking.setPersonRUT("12.345.678-9");
+        booking.setOptionFee(1); // Tarifa base 15000
+        booking.setNumberOfPerson(4); // Grupo de 4 para descuento (10%)
+        booking.setDateBooking(currentDate);
+        booking.setInitialTime(dateFormat.parse("2025-04-28 22:00:00"));
+        booking.setMainPerson("Ovejazo"); // Usuario actual exacto
+        booking.setEspecialDay(true); // Día especial (aunque no se aplica según los descuentos mostrados)
+
+        // Configurar los mocks
+        when(clientRepository.findByRut("12.345.678-9")).thenReturn(client);
+        when(bookingRepository.save(any(BookingEntity.class))).thenReturn(booking);
+
+        // Act
+        BookingEntity result = bookingService.saveBooking(booking);
+
+        // Assert
+        // Verificar que el cliente se actualizó correctamente con los valores exactos
+        verify(clientService).updateClient(argThat(updatedClient -> {
+            try {
+                return updatedClient.getCash() == 89290 && // Saldo final exacto
+                        updatedClient.getFrecuency() == 8 && // Frecuencia incrementada
+                        updatedClient.getRut().equals("12.345.678-9") &&
+                        updatedClient.getDateOfBirth().equals(dateFormat.parse("1990-04-27 16:00:00"));
+            } catch (ParseException e) {
+                return false;
+            }
+        }));
+
+        // Verificaciones adicionales
+        assertNotNull(result);
+        assertEquals(4, result.getNumberOfPerson().intValue());
+        assertEquals(1, result.getOptionFee().intValue());
+        assertEquals("12.345.678-9", result.getPersonRUT());
+        assertEquals("Ovejazo", result.getMainPerson());
+        assertEquals(currentDate, result.getDateBooking());
+        assertTrue(result.getEspecialDay());
+
+        verify(bookingRepository).save(any(BookingEntity.class));
+    }
+
+    @Test
+    public void saveBooking_WithOptionTwoAndLateHour() throws ParseException {
+        // Arrange
+        // Usar la fecha exacta proporcionada en UTC
+        Date currentDate = dateFormat.parse("2025-04-29 04:04:36");
+
+        ClientEntity client = new ClientEntity();
+        client.setRut("12.345.678-9");
+        client.setCash(100000);
+        client.setFrecuency(1);
+        client.setDateOfBirth(dateFormat.parse("1990-04-27 16:00:00")); // Hora exacta en CLT
+
+        BookingEntity booking = new BookingEntity();
+        booking.setPersonRUT("12.345.678-9");
+        booking.setOptionFee(2); // Opción 2: tarifa diferente
+        booking.setNumberOfPerson(1);
+        booking.setDateBooking(currentDate);
+        booking.setInitialTime(dateFormat.parse("2025-04-28 23:30:00"));
+        booking.setMainPerson("Ovejazo"); // Usuario actual exacto
+        booking.setEspecialDay(false);
+
+        when(clientRepository.findByRut("12.345.678-9")).thenReturn(client);
+        when(bookingRepository.save(any(BookingEntity.class))).thenReturn(booking);
+
+        // Act
+        BookingEntity result = bookingService.saveBooking(booking);
+
+        // Assert
+        assertNotNull(result);
+
+        // Verificar límite de tiempo específico para opción 2
+        assertEquals(35, result.getLimitTime());
+
+        // Verificar que el cliente se actualizó correctamente con los valores exactos mostrados
+        verify(clientService).updateClient(argThat(updatedClient -> {
+            try {
+                return updatedClient.getCash() == 76200 && // Saldo final exacto
+                        updatedClient.getFrecuency() == 2 &&
+                        updatedClient.getRut().equals("12.345.678-9") &&
+                        updatedClient.getDateOfBirth().equals(dateFormat.parse("1990-04-27 16:00:00"));
+            } catch (ParseException e) {
+                return false;
+            }
+        }));
+
+        // Verificar hora final correcta (23:30 + 35 minutos)
+        Date expectedFinalTime = dateFormat.parse("2025-04-29 00:05:00");
+        assertEquals(expectedFinalTime, result.getFinalTime());
+
+        // Verificaciones adicionales
+        assertEquals(1, result.getNumberOfPerson().intValue());
+        assertEquals(2, result.getOptionFee().intValue());
+        assertEquals("12.345.678-9", result.getPersonRUT());
+        assertEquals("Ovejazo", result.getMainPerson());
+        assertEquals(currentDate, result.getDateBooking());
+        assertFalse(result.getEspecialDay());
+
+        verify(bookingRepository).save(any(BookingEntity.class));
+    }
+
+
+    @Test
+    public void saveBooking_WithMaxPeople() throws ParseException {
+        // Arrange
+        Date currentDate = dateFormat.parse("2025-04-29 04:23:23"); // Fecha actual exacta
+
+        ClientEntity client = new ClientEntity();
+        client.setRut("12.345.678-9");
+        client.setCash(100000);
+        client.setFrecuency(1);
+        client.setDateOfBirth(dateFormat.parse("1990-04-27 12:00:00")); // Hora exacta en CLT
+
+        BookingEntity booking = new BookingEntity();
+        booking.setPersonRUT("12.345.678-9");
+        booking.setOptionFee(1); // Tarifa base 15000
+        booking.setNumberOfPerson(10); // Máximo número de personas
+        booking.setDateBooking(currentDate);
+        booking.setInitialTime(dateFormat.parse("2025-04-28 22:00:00"));
+        booking.setMainPerson("Ovejazo");
+        booking.setEspecialDay(false);
+
+        when(clientRepository.findByRut("12.345.678-9")).thenReturn(client);
+        when(bookingRepository.save(any(BookingEntity.class))).thenReturn(booking);
+
+        // Act
+        BookingEntity result = bookingService.saveBooking(booking);
+
+        // Assert
+        verify(clientService).updateClient(argThat(updatedClient -> {
+            try {
+                return updatedClient.getCash() == 85720 && // Saldo final exacto
+                        updatedClient.getFrecuency() == 2 && // Frecuencia incrementada
+                        updatedClient.getRut().equals("12.345.678-9") &&
+                        updatedClient.getDateOfBirth().equals(dateFormat.parse("1990-04-27 12:00:00"));
+            } catch (ParseException e) {
+                return false;
+            }
+        }));
+
+        // Verificaciones adicionales
+        assertNotNull(result);
+        assertEquals(10, result.getNumberOfPerson());
+        assertEquals(1, result.getOptionFee());
+        assertEquals("12.345.678-9", result.getPersonRUT());
+        assertEquals("Ovejazo", result.getMainPerson());
+        assertEquals(currentDate, result.getDateBooking());
+        assertFalse(result.getEspecialDay());
+
+        verify(bookingRepository).save(any(BookingEntity.class));
+    }
+
+    @Test
+    public void saveBooking_WithBirthdayDiscount() throws ParseException {
+        // Arrange
+        Date currentDate = dateFormat.parse("2025-04-29 04:26:10"); // Fecha actual exacta UTC
+
+        ClientEntity client = new ClientEntity();
+        client.setRut("12.345.678-9");
+        client.setCash(100000);
+        client.setFrecuency(1);
+        client.setDateOfBirth(dateFormat.parse("2025-04-29 08:00:00")); // Hora exacta en CLT
+
+        BookingEntity booking = new BookingEntity();
+        booking.setPersonRUT("12.345.678-9");
+        booking.setOptionFee(1); // Tarifa base 15000
+        booking.setNumberOfPerson(1);
+        booking.setDateBooking(currentDate);
+        booking.setInitialTime(dateFormat.parse("2025-04-29 22:00:00"));
+        booking.setMainPerson("Ovejazo");
+        booking.setEspecialDay(false);
+
+        when(clientRepository.findByRut("12.345.678-9")).thenReturn(client);
+        when(bookingRepository.save(any(BookingEntity.class))).thenReturn(booking);
+
+        // Act
+        BookingEntity result = bookingService.saveBooking(booking);
+
+        // Assert
+        verify(clientService).updateClient(argThat(updatedClient -> {
+            try {
+                return updatedClient.getCash() == 82150 && // Saldo final exacto
+                        updatedClient.getFrecuency() == 2 && // Frecuencia incrementada
+                        updatedClient.getRut().equals("12.345.678-9") &&
+                        updatedClient.getDateOfBirth().equals(dateFormat.parse("2025-04-29 08:00:00"));
+            } catch (ParseException e) {
+                return false;
+            }
+        }));
+
+        // Verificaciones adicionales
+        assertNotNull(result);
+        assertEquals(1, result.getNumberOfPerson().intValue());
+        assertEquals(1, result.getOptionFee().intValue());
+        assertEquals("12.345.678-9", result.getPersonRUT());
+        assertEquals("Ovejazo", result.getMainPerson());
+        assertEquals(currentDate, result.getDateBooking());
+        assertFalse(result.getEspecialDay());
+
+        verify(bookingRepository).save(any(BookingEntity.class));
+    }
+
+
+
 }

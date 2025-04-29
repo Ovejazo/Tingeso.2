@@ -42,7 +42,7 @@ export default function Navbar() {
           </IconButton>
 
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            Gestión de Karts.
+            Aplicación de gestión de karts
           </Typography>
           <Button color="inherit" onClick={handleLogin}>
             Login

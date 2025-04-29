@@ -39,6 +39,11 @@ public class BookingService {
         return (ArrayList<BookingEntity>) bookingRepository.findAll();
     }
 
+    public BookingEntity updateBooking(BookingEntity booking) {
+        return bookingRepository.save(booking);
+    }
+
+
     public BookingEntity saveBooking(BookingEntity booking) {
         /*
          * Aquí la reserva se hará dependiendo de la tarifa que escoja el cliente

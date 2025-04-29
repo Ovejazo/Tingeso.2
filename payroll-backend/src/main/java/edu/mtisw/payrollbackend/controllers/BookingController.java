@@ -48,4 +48,10 @@ public class BookingController {
         var isDeleted = bookingService.deleteBooking(id);
         return ResponseEntity.noContent().build();
     }
+
+    @PutMapping("/")
+    public ResponseEntity<BookingEntity> updateBooking(@RequestBody BookingEntity booking){
+        BookingEntity bookingUpdate = bookingService.updateBooking(booking);
+        return ResponseEntity.ok(bookingUpdate);
+    }
 }

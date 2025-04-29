@@ -185,4 +185,48 @@ public class ClientServiceTest {
         assertEquals("12.345.678-9", result.getRut());
         verify(clientRepository).findById(1L);
     }
+
+    @Test
+    public void saveClient_NullCash() {
+        // Arrange
+        testClient.setCash(null);
+        when(clientRepository.findByRut(testClient.getRut())).thenReturn(null);
+        when(clientRepository.save(any(ClientEntity.class))).thenReturn(testClient);
+
+        // Act
+        ClientEntity result = clientService.saveClient(testClient);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals("Ovejazo", result.getName());
+        assertEquals("12.345.678-9", result.getRut());
+        assertNull(result.getCash());
+        verify(clientRepository).save(testClient);
+    }
+
+    @Test
+    public void saveClient_NullName() {
+        // Arrange
+        testClient.setName(null);
+
+        // Act & Assert
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            clientService.saveClient(testClient);
+        });
+        assertEquals("El nombre del cliente no puede estar vacío.", exception.getMessage());
+        verify(clientRepository, never()).save(any(ClientEntity.class));
+    }
+
+    @Test
+    public void saveClient_NullRut() {
+        // Arrange
+        testClient.setRut(null);
+
+        // Act & Assert
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            clientService.saveClient(testClient);
+        });
+        assertEquals("El RUT del cliente no puede estar vacío.", exception.getMessage());
+        verify(clientRepository, never()).save(any(ClientEntity.class));
+    }
 }
